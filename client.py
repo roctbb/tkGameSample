@@ -104,7 +104,6 @@ def get_bullet(rx, ry, direction):
     }
 
     rotate(bullet, direction)
-
     return bullet
 
 
@@ -125,39 +124,54 @@ def loop():
         for bullet in game['bullets']:
             new_bullet = get_bullet(bullet['x'], bullet['y'], bullet['direction'])
             bullets.append(new_bullet)
+        c.after(25, loop)
     except Exception as e:
         print(e)
-
-    c.after(25, loop)
+        try:
+            s.close()
+        except:
+            pass
+        tk.destroy()
 
 
 
 
 # нажатие клавишиццы
 def keyDown(key):
-    if key.char == 'a':
-        s.send('go_left'.encode('utf-8'))
-    if key.char == 'd':
-        s.send('go_right'.encode('utf-8'))
-    if key.char == 'w':
-        s.send('go_up'.encode('utf-8'))
-    if key.char == 's':
-        s.send('go_down'.encode('utf-8'))
-    if key.keycode == 8320768:
-        s.send('fire_up'.encode('utf-8'))
-    if key.keycode == 8255233:
-        s.send('fire_down'.encode('utf-8'))
-    if key.keycode == 8189699:
-        s.send('fire_right'.encode('utf-8'))
-    if key.keycode == 8124162:
-        s.send('fire_left'.encode('utf-8'))
+    try:
+        if key.char == 'a':
+            s.send('go_left'.encode('utf-8'))
+        if key.char == 'd':
+            s.send('go_right'.encode('utf-8'))
+        if key.char == 'w':
+            s.send('go_up'.encode('utf-8'))
+        if key.char == 's':
+            s.send('go_down'.encode('utf-8'))
+        if key.keycode == 8320768:
+            s.send('fire_up'.encode('utf-8'))
+        if key.keycode == 8255233:
+            s.send('fire_down'.encode('utf-8'))
+        if key.keycode == 8189699:
+            s.send('fire_right'.encode('utf-8'))
+        if key.keycode == 8124162:
+            s.send('fire_left'.encode('utf-8'))
+    except:
+        try:
+            s.close()
+        except:
+            pass
+        tk.destroy()
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect(('localhost', 8082))
-print('connected')
-c.after(50, loop)
+try:
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect(('localhost', 8082))
+    print('connected')
+    c.after(50, loop)
 
-# при нажатии любой клавишы вызываем keyDown
-tk.bind("<KeyPress>", keyDown)
+    # при нажатии любой клавишы вызываем keyDown
+    tk.bind("<KeyPress>", keyDown)
+    mainloop()
+except:
+    tk.destroy()
 
-mainloop()
+

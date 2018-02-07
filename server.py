@@ -134,7 +134,6 @@ def loop():
             if bullet['direction'] == 'right':
                 move(bullet, 20, 0)
 
-
         time.sleep(0.05)
 
 def process_command(tank, command):
@@ -203,27 +202,49 @@ while inputs:
             tanks.append(new_tank)
             print('accepted')
         else:
-            data = s.recv(11024)
-            if data:
-                command = data.decode('utf-8')
-                print("received", command)
-                tank = message_queues[connection]
-                print(tank)
-                tanks.remove(tank)
-                tank = process_command(tank, command)
-                print(tank)
-                tanks.append(tank)
+            try:
+                data = s.recv(11024)
+                if data:
+                    command = data.decode('utf-8')
+                    print("received", command)
+                    tank = message_queues[connection]
+                    print(tank)
+                    tanks.remove(tank)
+                    tank = process_command(tank, command)
+                    print(tank)
+                    tanks.append(tank)
 
-                if s not in outputs:
-                    outputs.append(s)
-            else:
+                    if s not in outputs:
+                        outputs.append(s)
+                else:
+                    if s in outputs:
+                        outputs.remove(s)
+                    inputs.remove(s)
+                    try:
+                        del message_queues[s]
+                    except:
+                        pass
+                    try:
+                        s.close()
+                    except:
+                        pass
+            except:
                 if s in outputs:
                     outputs.remove(s)
-                inputs.remove(s)
-                s.close()
-                del message_queues[s]
+                if s in inputs:
+                    inputs.remove(s)
+                try:
+                    del message_queues[s]
+                except:
+                    pass
+                try:
+                    s.close()
+                except:
+                    pass
+
 
     for s in writable:
+        try:
             tank = message_queues[connection]
             if tank not in tanks:
                 s.close()
@@ -233,11 +254,31 @@ while inputs:
                 "bullets": bullets
             })
             s.sendall(response.encode('utf-8'))
+        except:
+            if s in outputs:
+                outputs.remove(s)
+            if s in inputs:
+                inputs.remove(s)
+            try:
+                del message_queues[s]
+            except:
+                pass
+            try:
+                s.close()
+            except:
+                pass
+
 
     for s in exceptional:
         inputs.remove(s)
         if s in outputs:
             outputs.remove(s)
-        s.close()
-        del message_queues[s]
+        try:
+            del message_queues[s]
+        except:
+            pass
+        try:
+            s.close()
+        except:
+            pass
     time.sleep(0.025)
