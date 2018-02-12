@@ -1,3 +1,4 @@
+import random
 from tkinter import Tk, Canvas, mainloop, NW
 from PIL import Image, ImageTk
 
@@ -86,6 +87,7 @@ def coords(object):
 
 def get_tank(x, y, direction):
     tank = {
+        "life": 10,
         "direction": direction,
         "up": c.create_image(x * block_width, y * block_height, image=images['tank_up'], anchor=NW, state='normal'),
         "down": c.create_image(x * block_width, y * block_height, image=images['tank_down'], anchor=NW, state='hidden'),
@@ -129,10 +131,29 @@ def get_bullet(x, y, direction):
 
 my_tank = get_tank(6, 6, 'up')
 
+def get_action(tank):
+    return random.choice(['go_up', 'go_down', 'go_left', 'go_right', 'fire_up', 'fire_down', 'fire_left', 'fire_right'])
 
-def loop():
+def move_bullets():
     for bullet in bullets:
         x, y = coords(bullet)
+        bullet_hit = False
+        for tank in tanks:
+            if (x,y) == coords(tank):
+                tank['life']-=1
+                bullets.remove(bullet)
+                delete(bullet)
+
+                if tank['life'] == 0:
+                    if tank == my_tank:
+                        tk.destroy()
+                    else:
+                        delete(tank)
+                        tanks.remove(tank)
+                bullet_hit = True
+                break
+        if bullet_hit:
+            continue
         if not is_available(x, y):
             delete(bullet)
             bullets.remove(bullet)
@@ -145,8 +166,44 @@ def loop():
             move(bullet, -20, 0)
         if bullet['direction'] == 'right':
             move(bullet, 20, 0)
-    c.after(50, loop)
+    c.after(50, move_bullets)
 
+def move_tanks():
+    for tank in tanks:
+        if tank == my_tank:
+            continue
+        x, y = coords(tank)
+        action = get_action(tank)
+        if action == "go_up":
+            rotate(tank, 'up')
+            if is_available(x, y-1):
+                move(tank, 0, -block_height)
+        if action == "go_down":
+            rotate(tank, 'down')
+            if is_available(x, y+1):
+                move(tank, 0, block_height)
+        if action == "go_left":
+            rotate(tank, 'left')
+            if is_available(x-1, y):
+                move(tank, -block_width, 0)
+        if action == "go_right":
+            rotate(tank, 'right')
+            if is_available(x+1, y):
+                move(tank, block_width, 0)
+        if action == "fire_up":
+            rotate(tank, 'up')
+            bullets.append(get_bullet(x,y,'up'))
+        if action == "fire_down":
+            rotate(tank, 'down')
+            bullets.append(get_bullet(x,y,'down'))
+        if action == "fire_left":
+            rotate(tank, 'left')
+            bullets.append(get_bullet(x,y,'left'))
+        if action == "fire_right":
+            rotate(tank, 'right')
+            bullets.append(get_bullet(x,y,'right'))
+
+    c.after(1000, move_tanks)
 
 # проверка доступности клетки
 def is_available(i, j):
@@ -154,6 +211,10 @@ def is_available(i, j):
         return False
     if game_map[i][j] == 1:
         return False
+    # new
+    for tank in tanks:
+        if coords(tank) == (i,j):
+            return False
     return True
 
 
@@ -193,9 +254,22 @@ def keyDown(key):
     move(my_tank, dx * block_width, dy * block_height)
 
 
-c.after(50, loop)
 
-# при нажатии любой клавишы вызываем keyDown
-tk.bind("<KeyPress>", keyDown)
+def start():
+    tanks.append(my_tank)
+    for i in range(5):
+        x = 0
+        y = 0
+        while not is_available(x,y):
+            x = random.randint(1,11)
+            y = random.randint(1,11)
+        tanks.append(get_tank(x,y,'up'))
+    c.after(50, move_bullets)
+    c.after(1000, move_tanks)
 
-mainloop()
+    # при нажатии любой клавишы вызываем keyDown
+    tk.bind("<KeyPress>", keyDown)
+
+    mainloop()
+
+start()
